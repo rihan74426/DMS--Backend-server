@@ -13,6 +13,11 @@ const productSchema = new mongoose.Schema(
       unique: true, // Ensure it's unique
       required: true,
     },
+    group: { type: String },
+    packSize: { type: String },
+    sdp: { type: Number },
+    dp: { type: Number },
+    tp: { type: Number },
   },
   { timestamps: true }
 );

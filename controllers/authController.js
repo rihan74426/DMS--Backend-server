@@ -8,6 +8,36 @@ const generateToken = (id) => {
   });
 };
 
+exports.createStore = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const { store } = req.body;
+    if (user) {
+      user.store = store;
+      const savedStore = await user.sava();
+      res.json({ savedStore });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Store creation failed", error });
+  }
+};
+
+exports.createOrder = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const { order } = req.body;
+    if (user) {
+      user.orders = order;
+      const savedOrder = await user.save();
+      res.json({ savedOrder });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Order creation failed", error });
+  }
+};
+
 exports.updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

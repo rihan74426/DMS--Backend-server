@@ -23,6 +23,19 @@ const userSchema = new mongoose.Schema(
     },
     address: { type: String },
     phone: { type: String },
+    store: [
+      { name: { type: String } },
+      { location: { type: String } },
+      { manager: { type: String } },
+      { email: { type: String } },
+      { number: { type: String } },
+    ],
+    orders: [
+      { userId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" } },
+      { invoice: { type: String } },
+      { productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" } },
+      { quantity: { type: String } },
+    ],
     profileImage: {
       type: String,
       default: "uploads/profile-pictures/default.png",

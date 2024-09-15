@@ -8,6 +8,8 @@ const {
   updateUserProfile,
   createStore,
   createOrder,
+  updateOrder,
+  deleteOrder,
 } = require("../controllers/authController");
 const protect = require("../middlewares/authMiddlewares");
 const upload = require("../middlewares/uploadMiddleware");
@@ -17,8 +19,12 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/profile", getUserProfile);
 router.put("/profile", protect, upload, updateUserProfile);
+
+// store and order routes
 router.put("/profile/store", protect, createStore);
-router.put("/profile/order", protect, createOrder);
+router.post("/profile/order", protect, createOrder);
+router.put("/profile/order", protect, updateOrder);
+router.delete("/profile/order", protect, deleteOrder);
 
 // Update user by ID
 router.put("/profile/:id", updateUsers);

@@ -11,10 +11,17 @@ const generateToken = (id) => {
 exports.createStore = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const { store } = req.body;
     if (user) {
-      user.store = store;
-      const savedStore = await user.sava();
+      const data = {
+        name: req.body.name,
+        manager: req.body.manager,
+        email: req.body.email,
+        number: req.body.number,
+        location: req.body.location,
+      };
+      user.store[0] = data;
+      const savedStore = await user.save();
+      console.log(data);
       res.json({ savedStore });
     } else {
       res.status(404).json({ message: "User not found" });
@@ -29,12 +36,40 @@ exports.createOrder = async (req, res) => {
     const user = await User.findById(req.user._id);
     const { order } = req.body;
     if (user) {
-      user.orders = order;
+      user.orders.push(order);
       const savedOrder = await user.save();
       res.json({ savedOrder });
     }
   } catch (error) {
     res.status(500).json({ message: "Order creation failed", error });
+  }
+};
+exports.updateOrder = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const { invoice } = req.params;
+    if (user) {
+      const order = user.orders.filter((el) => el.invoice == invoice);
+      order = req.body;
+      const savedOrder = await user.save();
+      res.json({ savedOrder });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Order Update failed", error });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const { invoice } = req.params;
+    if (user) {
+      user.orders = user.orders.filter((order) => order.invoice !== invoice);
+      const savedOrder = await user.save();
+      res.json({ savedOrder });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Order deletion failed", error });
   }
 };
 

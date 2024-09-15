@@ -1,6 +1,24 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const orderSchema = new Schema({
+  productId: { type: Schema.Types.ObjectId, ref: "Product" },
+  invoice: String,
+  quantity: Number,
+  price: Number,
+  orderDate: { type: Date, default: Date.now },
+  status: String, // e.g. 'Pending', 'Completed'
+});
+
+const storeSchema = new Schema({
+  storeName: String,
+  storeManager: String,
+  storeAddress: String,
+  storePhone: String,
+  storeEmail: String,
+  products: [{ type: Schema.Types.ObjectId, ref: "Product" }], // References to products
+});
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -23,19 +41,8 @@ const userSchema = new mongoose.Schema(
     },
     address: { type: String },
     phone: { type: String },
-    store: [
-      { name: { type: String } },
-      { location: { type: String } },
-      { manager: { type: String } },
-      { email: { type: String } },
-      { number: { type: String } },
-    ],
-    orders: [
-      { userId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" } },
-      { invoice: { type: String } },
-      { productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" } },
-      { quantity: { type: String } },
-    ],
+    store: storeSchema,
+    orders: [orderSchema],
     profileImage: {
       type: String,
       default: "uploads/profile-pictures/default.png",

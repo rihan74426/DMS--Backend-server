@@ -1,76 +1,11 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const { User, Store, Order } = require("../models/User");
 const multer = require("multer");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
-};
-
-exports.createStore = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (user) {
-      const data = {
-        name: req.body.name,
-        manager: req.body.manager,
-        email: req.body.email,
-        number: req.body.number,
-        location: req.body.location,
-      };
-      user.store[0] = data;
-      const savedStore = await user.save();
-      console.log(data);
-      res.json({ savedStore });
-    } else {
-      res.status(404).json({ message: "User not found" });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Store creation failed", error });
-  }
-};
-
-exports.createOrder = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const { order } = req.body;
-    if (user) {
-      user.orders.push(order);
-      const savedOrder = await user.save();
-      res.json({ savedOrder });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Order creation failed", error });
-  }
-};
-exports.updateOrder = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const { invoice } = req.params;
-    if (user) {
-      const order = user.orders.filter((el) => el.invoice == invoice);
-      order = req.body;
-      const savedOrder = await user.save();
-      res.json({ savedOrder });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Order Update failed", error });
-  }
-};
-
-exports.deleteOrder = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const { invoice } = req.params;
-    if (user) {
-      user.orders = user.orders.filter((order) => order.invoice !== invoice);
-      const savedOrder = await user.save();
-      res.json({ savedOrder });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Order deletion failed", error });
-  }
 };
 
 exports.updateUserProfile = async (req, res) => {
@@ -200,5 +135,111 @@ exports.deleteUser = async (req, res) => {
     res.json({ message: "User deleted successfully" });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// store controllers below
+
+exports.getStore = async (req, res) => {
+  try {
+    const userId = req.user._id; // Assuming user ID is obtained from authenticated session or token
+    const user = await User.findById(userId).populate("store");
+    let store = await Store.findOne({ userId: userId });
+    if (!store) {
+      store = await Store.create({ userId: userId });
+    }
+    res.status(200).json(store);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching store", error });
+  }
+};
+
+exports.updateStore = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const storeData = req.body; // Store data to update
+
+    // Find the store based on the userId
+    const store = await Store.findOne({ userId: userId });
+    if (!store) {
+      return res.status(404).json({ message: "Store not found for this user" });
+    }
+    // Update store fields
+    const updatedStore = await Store.findByIdAndUpdate(
+      store._id, // Use the store's _id
+      storeData,
+      { new: true }
+    );
+
+    res.status(200).json(updatedStore);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating store", error });
+  }
+};
+
+//Order Controllers below
+
+exports.createOrder = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const orderData = req.body; // Product, quantity, price, etc.
+
+    const newOrder = new User.Order({ ...orderData, userId });
+    await newOrder.save();
+
+    // Add the order reference to the user
+    await User.findByIdAndUpdate(userId, { $push: { orders: newOrder._id } });
+
+    res.status(201).json(newOrder);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating order", error });
+  }
+};
+
+exports.getOrders = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId).populate("orders");
+    res.status(200).json(user.orders);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching orders", error });
+  }
+};
+
+exports.updateOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const orderData = req.body;
+
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, orderData, {
+      new: true,
+    });
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json(updatedOrder);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating order", error });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    const deletedOrder = await Order.findByIdAndDelete(orderId);
+    if (!deletedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Remove the order reference from the user
+    await User.findByIdAndUpdate(deletedOrder.userId, {
+      $pull: { orders: orderId },
+    });
+
+    res.status(200).json({ message: "Order deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting order", error });
   }
 };

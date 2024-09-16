@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const orderSchema = new Schema({
-  productId: { type: Schema.Types.ObjectId, ref: "Product" },
+const orderSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   invoice: String,
   quantity: Number,
   price: Number,
@@ -10,13 +11,14 @@ const orderSchema = new Schema({
   status: String, // e.g. 'Pending', 'Completed'
 });
 
-const storeSchema = new Schema({
-  storeName: String,
-  storeManager: String,
-  storeAddress: String,
-  storePhone: String,
-  storeEmail: String,
-  products: [{ type: Schema.Types.ObjectId, ref: "Product" }], // References to products
+const storeSchema = new mongoose.Schema({
+  storeName: { type: String, default: "Your Store" },
+  storeManager: { type: String, default: "Your Store Manager" },
+  storeAddress: { type: String, default: "Ex: Bahaddarhat, Chattogram" },
+  storePhone: { type: String, default: "01xxx-xxxxxx" },
+  storeEmail: { type: String, default: "store@example.com" },
+  products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], // References to products
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 const userSchema = new mongoose.Schema(
@@ -41,8 +43,8 @@ const userSchema = new mongoose.Schema(
     },
     address: { type: String },
     phone: { type: String },
-    store: storeSchema,
-    orders: [orderSchema],
+    store: { type: mongoose.Schema.Types.ObjectId, ref: "Store" }, // Capitalized "Store"
+    orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }], // Corrected to "Order"
     profileImage: {
       type: String,
       default: "uploads/profile-pictures/default.png",
@@ -65,5 +67,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 const User = mongoose.model("User", userSchema);
+const Store = mongoose.model("Store", storeSchema);
+const Order = mongoose.model("Order", orderSchema);
 
-module.exports = User;
+module.exports = { User, Store, Order };

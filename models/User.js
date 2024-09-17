@@ -8,7 +8,7 @@ const orderSchema = new mongoose.Schema({
   quantity: Number,
   price: Number,
   orderDate: { type: Date, default: Date.now },
-  status: String, // e.g. 'Pending', 'Completed'
+  status: { type: String, enum: ["pending", "completed"], default: "pending" }, // e.g. 'Pending', 'Completed'
 });
 
 const storeSchema = new mongoose.Schema({

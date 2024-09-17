@@ -25,10 +25,10 @@ router.put("/profile", protect, upload, updateUserProfile);
 // store and order routes
 router.get("/store", protect, getStore);
 router.put("/store", protect, updateStore);
-router.post("/orders", createOrder); // Create new order
-router.get("/orders", getOrders); // Get all orders
-router.put("/orders/:id", updateOrder); // Update order
-router.delete("/orders/:id", deleteOrder); // Delete order
+router.post("/orders", protect, createOrder); // Create new order
+router.get("/orders", protect, getOrders); // Get all orders
+router.put("/orders/:id", protect, updateOrder); // Update order
+router.delete("/orders/:id", protect, deleteOrder); // Delete order
 
 // Update user by ID
 router.put("/profile/:id", updateUsers);

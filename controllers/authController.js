@@ -184,7 +184,7 @@ exports.createOrder = async (req, res) => {
     const userId = req.user._id;
     const orderData = req.body; // Product, quantity, price, etc.
 
-    const newOrder = new User.Order({ ...orderData, userId });
+    const newOrder = new Order(orderData);
     await newOrder.save();
 
     // Add the order reference to the user

@@ -1,6 +1,12 @@
 const jwt = require("jsonwebtoken");
 const { User, Store, Order } = require("../models/User");
+const Product = require("../models/Product");
 const multer = require("multer");
+const {
+  sendEmail,
+  adminEmailTemplate,
+  ordererEmailTemplate,
+} = require("./emailControl");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -189,6 +195,21 @@ exports.createOrder = async (req, res) => {
 
     // Add the order reference to the user
     await User.findByIdAndUpdate(userId, { $push: { orders: newOrder._id } });
+    const admins = await User.find({ role: "admin" }).select("email"); // Only fetch the emails of admins
+    const adminEmails = admins.map((admin) => admin.email);
+    // const adminMail = admins.forEach((admin) => admin.email);
+    const user = await User.findById(userId).select("email");
+
+    await sendEmail(
+      adminEmails, // Admin email
+      "New Order Placed",
+      adminEmailTemplate(orderData)
+    );
+    await sendEmail(
+      user.email, // Orderer's email
+      "Order Confirmation",
+      ordererEmailTemplate(orderData)
+    );
 
     res.status(201).json(newOrder);
   } catch (error) {
@@ -210,6 +231,8 @@ exports.updateOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
     const orderData = req.body;
+    const product = await Product.findById(orderData.productId);
+    const store = await Store.findOne({ userId: orderData.userId });
 
     const updatedOrder = await Order.findByIdAndUpdate(orderId, orderData, {
       new: true,
@@ -217,7 +240,10 @@ exports.updateOrder = async (req, res) => {
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
     }
-
+    if (orderData.status == "completed") {
+      store.products.push(product);
+    }
+    store.save();
     res.status(200).json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: "Error updating order", error });

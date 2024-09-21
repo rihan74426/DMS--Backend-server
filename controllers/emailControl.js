@@ -1,38 +1,59 @@
+const dotenv = require("dotenv");
+dotenv.config();
 // emailService.js
 
 const nodemailer = require("nodemailer");
-const { User } = require("../models/User");
+const { User, Store } = require("../models/User");
 const Product = require("../models/Product");
 
 // Create a transporter
 const transporter = nodemailer.createTransport({
-  service: "Gmail", // Or use a different service
+  service: "gmail", // Or use a different service
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.MAIL,
     pass: process.env.APP_PASS,
   },
+  logger: true, // Enable logger to see more details
+  debug: true,
 });
 
 // Function to send an email
 const sendEmail = (to, subject, htmlContent) => {
   return transporter.sendMail({
-    from: process.env.MAIL, // Sender email
+    from: {
+      name: "Distribution Management Software",
+      address: process.env.MAIL,
+    }, // Sender email
     to, // Recipient email
     subject, // Subject line
     html: htmlContent, // HTML body of the email
   });
 };
 
-const adminEmailTemplate = (orderDetails) => {
-  const userName = User.findById(orderDetails.userId).populate("store");
-  const product = Product.findById(orderDetails.productId);
+const adminEmailTemplate = async (orderDetails) => {
+  const userName = await User.findById(orderDetails.userId);
+  const store = await Store.findOne({ userId: orderDetails.userId });
+  const product = await Product.findById(orderDetails.productId);
+
+  if (!userName || !store || !product) {
+    throw new Error(
+      "Invalid order details: User, store, or product not found."
+    );
+  }
+
+  console.log("User:", userName);
+  console.log("Store:", store);
+  console.log("Product:", product);
   return `
       <h1>New Order Placed!</h1>
       <p>An order has been placed with the following details:</p>
       <ul>
         <li>Order Invoice: ${orderDetails.invoice}</li>
-        <li>Orderer: ${userName.name}</li>
-        <li>Store Name: ${userName.store.storeName}</li>
+        <li>Orderer: ${userName.username}</li>
+        <li>Store Name: ${store.storeName}</li>
         <ul>
           <li>Product Name:${product.name}</li>
           <li>Order Quantity: ${orderDetails.quantity}</li>
@@ -47,15 +68,16 @@ const adminEmailTemplate = (orderDetails) => {
     `;
 };
 
-const ordererEmailTemplate = (orderDetails) => {
-  const userName = User.findById(orderDetails.userId).populate("store");
-  const product = Product.findById(orderDetails.productId);
+const ordererEmailTemplate = async (orderDetails) => {
+  const userName = await User.findById(orderDetails.userId).populate("store");
+  const store = await Store.findOne({ userId: orderDetails.userId });
+  const product = await Product.findById(orderDetails.productId);
   return `
       <h1>Thank You for Your Order, ${userName.username}!</h1>
       <p>We've received your order with the following details:</p>
       <ul>
         <li>Order ID: ${orderDetails.invoice}</li>
-        <li>Store Name: ${userName.store.storeName}</li>
+        <li>Store Name: ${store.storeName}</li>
         <li>Products:</li>
         <ul>
           <li>Product Name:${product.name}</li>

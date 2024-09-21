@@ -197,26 +197,36 @@ exports.createOrder = async (req, res) => {
     await User.findByIdAndUpdate(userId, { $push: { orders: newOrder._id } });
     const admins = await User.find({ role: "admin" }).select("email"); // Only fetch the emails of admins
     const adminEmails = admins.map((admin) => admin.email);
-    // const adminMail = admins.forEach((admin) => admin.email);
     const user = await User.findById(userId).select("email");
 
-    await sendEmail(
-      adminEmails, // Admin email
-      "New Order Placed",
-      adminEmailTemplate(orderData)
-    );
-    await sendEmail(
-      user.email, // Orderer's email
-      "Order Confirmation",
-      ordererEmailTemplate(orderData)
-    );
+    try {
+      // Await email template generation
+      const adminEmailContent = await adminEmailTemplate(orderData);
+      const ordererEmailContent = await ordererEmailTemplate(orderData);
 
+      // Send emails
+      sendEmail(
+        adminEmails, // Admin emails
+        "New Order Placed",
+        adminEmailContent // Awaited content
+      );
+      sendEmail(
+        user.email, // Orderer's email
+        "Order Confirmation",
+        ordererEmailContent // Awaited content
+      );
+
+      console.log("Email sent successfully!");
+    } catch (err) {
+      console.log("Error sending email:", err);
+    }
     res.status(201).json(newOrder);
   } catch (error) {
-    res.status(500).json({ message: "Error creating order", error });
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error creating order", error });
+    }
   }
 };
-
 exports.getOrders = async (req, res) => {
   try {
     const userId = req.user._id;

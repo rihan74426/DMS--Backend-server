@@ -3,9 +3,17 @@ const bcrypt = require("bcryptjs");
 
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+  products: [
+    {
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+      },
+      quantity: { type: Number, required: true },
+    },
+  ],
   invoice: String,
-  quantity: Number,
   price: Number,
   orderDate: { type: Date, default: Date.now },
   status: { type: String, enum: ["pending", "completed"], default: "pending" }, // e.g. 'Pending', 'Completed'

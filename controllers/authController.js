@@ -145,6 +145,14 @@ exports.deleteUser = async (req, res) => {
 };
 
 // store controllers below
+exports.getAllStores = async (req, res) => {
+  try {
+    const stores = await Store.find();
+    res.status(200).json(stores);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching orders", error });
+  }
+};
 
 exports.getStore = async (req, res) => {
   try {
@@ -230,8 +238,17 @@ exports.createOrder = async (req, res) => {
 exports.getOrders = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId).populate("orders");
-    res.status(200).json(user.orders);
+    const order = await Order.find({ userId: userId }).populate("products");
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching orders", error });
+  }
+};
+
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find().populate("products");
+    res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: "Error fetching orders", error });
   }

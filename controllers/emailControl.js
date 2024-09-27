@@ -16,8 +16,6 @@ const transporter = nodemailer.createTransport({
     user: process.env.MAIL,
     pass: process.env.APP_PASS,
   },
-  logger: true, // Enable logger to see more details
-  debug: true,
 });
 
 // Function to send an email
@@ -44,9 +42,6 @@ const adminEmailTemplate = async (orderDetails) => {
     );
   }
 
-  console.log("User:", userName);
-  console.log("Store:", store);
-  console.log("Product:", product);
   return `
       <h1>New Order Placed!</h1>
       <p>An order has been placed with the following details:</p>

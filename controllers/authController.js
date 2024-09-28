@@ -258,19 +258,32 @@ exports.updateOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
     const orderData = req.body;
-    const product = await Product.findById(orderData.productId);
+
+    // Find all products associated with the order
+    const productIds = orderData.products.map((el) => el.productId);
+    const products = await Product.find({ _id: { $in: productIds } });
     const store = await Store.findOne({ userId: orderData.userId });
 
+    // Update the order with new data
     const updatedOrder = await Order.findByIdAndUpdate(orderId, orderData, {
       new: true,
     });
+
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
     }
-    if (orderData.status == "completed") {
-      store.products.push(product);
+
+    // If order is marked as completed, add products to the store
+    if (orderData.status === "completed") {
+      products.forEach((product) => {
+        store.products.push(product._id);
+      });
     }
-    store.save();
+
+    // Save the store after adding products
+    await store.save();
+
+    // Respond with the updated order
     res.status(200).json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: "Error updating order", error });

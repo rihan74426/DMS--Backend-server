@@ -17,6 +17,7 @@ const orderSchema = new mongoose.Schema({
   price: Number,
   orderDate: { type: Date, default: Date.now },
   status: { type: String, enum: ["pending", "completed"], default: "pending" }, // e.g. 'Pending', 'Completed'
+  payment: { type: String, enum: ["Unpaid", "Paid"], default: "Unpaid" }, // e.g. 'Pending', 'Completed'
 });
 
 const storeSchema = new mongoose.Schema({

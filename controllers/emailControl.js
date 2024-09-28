@@ -1,7 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config();
-// emailService.js
 
+// emailService.js
 const nodemailer = require("nodemailer");
 const { User, Store } = require("../models/User");
 const Product = require("../models/Product");
@@ -31,60 +31,77 @@ const sendEmail = (to, subject, htmlContent) => {
   });
 };
 
-const adminEmailTemplate = async (orderDetails) => {
-  const userName = await User.findById(orderDetails.userId);
-  const store = await Store.findOne({ userId: orderDetails.userId });
-  const product = await Product.findById(orderDetails.productId);
+// Helper function to generate product details in the email
+const generateProductDetails = async (products) => {
+  let productDetailsHtml = "";
 
-  if (!userName || !store || !product) {
-    throw new Error(
-      "Invalid order details: User, store, or product not found."
-    );
+  for (const product of products) {
+    const productData = await Product.findById(product.productId);
+    if (productData) {
+      productDetailsHtml += `
+        <ul>
+          <li>Product Name: ${productData.name}</li>
+          <li>Order Quantity: ${product.quantity}</li>
+          <li>Product Pack Size: ${productData.packSize}</li>
+          <li>Product Group: ${productData.group}</li>
+          <li>Product MRP: ${productData.price}</li>
+        </ul>
+        <hr>`;
+    }
   }
+
+  return productDetailsHtml;
+};
+
+// Admin email template for multiple products
+const adminEmailTemplate = async (orderDetails) => {
+  const user = await User.findById(orderDetails.userId);
+  const store = await Store.findOne({ userId: orderDetails.userId });
+
+  if (!user || !store) {
+    throw new Error("Invalid order details: User or store not found.");
+  }
+
+  const productDetails = await generateProductDetails(orderDetails.products);
 
   return `
       <h1>New Order Placed!</h1>
       <p>An order has been placed with the following details:</p>
-      <ul>
-        <li>Order Invoice: ${orderDetails.invoice}</li>
-        <li>Orderer: ${userName.username}</li>
-        <li>Store Name: ${store.storeName}</li>
-        <ul>
-          <li>Product Name:${product.name}</li>
-          <li>Order Quantity: ${orderDetails.quantity}</li>
-          <li>Product PackSize ${product.packSize}</li>
-          <li>Product Group: ${product.group}</li>
-          <li>Product MRP: ${product.price}</li>
-        </ul>
-        <hr>
-        <li>Total Amount: ${orderDetails.price}</li>
-      </ul>
+        <h2>Order Invoice: #${orderDetails.invoice}</h2>
+        <h3>Orderer: ${user.username}</h3>
+        <h3>Store Name: ${store.storeName}</h3>
+        <h3>Store Address: ${store.storeAddress}</li>
+      <h3>Products:</h3>
+      ${productDetails}
+      <p>Total Amount: ${orderDetails.price}</p>
       <p>Check the admin dashboard for more details.</p>
     `;
 };
 
+// Orderer email template for multiple products
 const ordererEmailTemplate = async (orderDetails) => {
-  const userName = await User.findById(orderDetails.userId).populate("store");
+  const user = await User.findById(orderDetails.userId);
   const store = await Store.findOne({ userId: orderDetails.userId });
-  const product = await Product.findById(orderDetails.productId);
+
+  if (!user || !store) {
+    throw new Error("Invalid order details: User or store not found.");
+  }
+
+  const productDetails = await generateProductDetails(orderDetails.products);
+
   return `
-      <h1>Thank You for Your Order, ${userName.username}!</h1>
+      <h1>Thank You ${user.username} for Your Order!</h1>
       <p>We've received your order with the following details:</p>
       <ul>
-        <li>Order ID: ${orderDetails.invoice}</li>
+        <li>Order Invoice: #${orderDetails.invoice}</li>
         <li>Store Name: ${store.storeName}</li>
-        <li>Products:</li>
-        <ul>
-          <li>Product Name:${product.name}</li>
-          <li>Order Quantity: ${orderDetails.quantity}</li>
-          <li>Product PackSize ${product.packSize}</li>
-          <li>Product Group: ${product.group}</li>
-          <li>Product MRP: ${product.price}</li>
-        </ul>
-        <hr>
-        <li>Total Amount: ${orderDetails.price}</li>
+        <li>Store Phone: ${store.storePhone}</li>
+        <li>Store Address: ${store.storeAddress}</li>
       </ul>
-      <p>We will soon contact you and talk further about payment details and the order shipment.</p>
+      <h3>Products have ordered:</h3>
+      ${productDetails}
+      <h5>Total Amount: ${orderDetails.price}</h5>
+      <p>We will contact you soon to discuss payment details and the order shipment.</p>
     `;
 };
 

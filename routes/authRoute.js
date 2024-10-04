@@ -14,6 +14,7 @@ const {
   getOrders,
   getAllOrders,
   getAllStores,
+  deleteStoreProduct,
 } = require("../controllers/authController");
 const protect = require("../middlewares/authMiddlewares");
 const upload = require("../middlewares/uploadMiddleware");
@@ -28,6 +29,7 @@ router.put("/profile", protect, upload, updateUserProfile);
 router.get("/stores", getAllStores);
 router.get("/store", protect, getStore);
 router.put("/store", protect, updateStore);
+router.delete("/store/:id", protect, deleteStoreProduct);
 
 router.post("/orders", protect, createOrder); // Create new order
 router.get("/orders", protect, getOrders); // Get orders

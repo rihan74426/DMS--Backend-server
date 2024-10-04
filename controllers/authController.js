@@ -190,6 +190,22 @@ exports.updateStore = async (req, res) => {
     res.status(500).json({ message: "Error updating store", error });
   }
 };
+exports.deleteStoreProduct = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const store = await Store.findOne({ userId: userId });
+
+    if (!store) {
+      return res.status(404).json({ message: "Store not found" });
+    }
+    store.products = store.products.filter(el => el.toString() !== req.params.id);
+    await store.save();
+
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting product", error });
+  }
+};
 
 //Order Controllers below
 
@@ -276,7 +292,7 @@ exports.updateOrder = async (req, res) => {
     // If order is marked as completed, add products to the store
     if (orderData.status === "completed") {
       products.forEach((product) => {
-        store.products.push(product._id);
+         store.products.push(product._id);
       });
     }
 

@@ -7,6 +7,10 @@ const {
   adminEmailTemplate,
   ordererEmailTemplate,
 } = require("./emailControl");
+const Transaction = require("../models/Transaction");
+const dotenv = require("dotenv");
+const SSLCommerzPayment = require('sslcommerz-lts')
+
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -221,7 +225,7 @@ exports.createOrder = async (req, res) => {
     await User.findByIdAndUpdate(userId, { $push: { orders: newOrder._id } });
     const admins = await User.find({ role: "admin" }).select("email"); // Only fetch the emails of admins
     const adminEmails = admins.map((admin) => admin.email);
-    const user = await User.findById(userId).select("email");
+    const user = await User.findById(userId);
 
     try {
       // Await email template generation
@@ -244,6 +248,64 @@ exports.createOrder = async (req, res) => {
     } catch (err) {
       console.log("Error sending email:", err);
     }
+    try {
+      const transactionData = {
+      client: userId,
+      products: orderData.products.map((el,index,arr)=>{
+        return {productId:el.productId,quantity:el.quantity}
+      }),
+      total: orderData.price,
+      order: orderData.invoice
+    }
+    const newTransaction = new Transaction(transactionData);
+
+    // Save transaction to the database
+    await newTransaction.save();
+    const product = await Product.findById(orderData.products[0].productId);
+    const is_live = false
+    const data = {
+      total_amount: orderData.price,
+      currency: 'BDT',
+      tran_id: newTransaction._id.toString(), // use unique tran_id for each api call
+      success_url: 'http://localhost:5173/success',
+      fail_url: 'http://localhost:5173/fail',
+      cancel_url: 'http://localhost:5173/cancel',
+      ipn_url: 'http://localhost:5173/ipn',
+      shipping_method: 'Courier',
+      product_name: product.name,
+
+      product_category: 'Regular',
+      product_profile: 'general',
+      cus_name: user.username,
+      cus_email: user.email,
+      cus_add1: user.address,
+      cus_city: 'Chattogram',
+      cus_country: 'Bangladesh',
+      cus_phone: user.phone,
+      ship_name: user.username,
+      ship_add1: orderData.address,
+      ship_city: 'Chattogram',
+      ship_country: 'Bangladesh',
+    };
+  const sslcz = new SSLCommerzPayment(process.env.MY_STORE, process.env.STORE_PASS, is_live)
+  sslcz.init(data).then(apiResponse => {
+    // Check if the response has a valid GatewayPageURL
+    if (apiResponse.GatewayPageURL) {
+      res.redirect(apiResponse.GatewayPageURL); // Redirect user to the payment gateway
+      console.log('Redirecting to:', apiResponse.GatewayPageURL);
+    } else {
+      console.log('Failed to get payment gateway URL');
+    }
+  }).catch(error => {
+    console.error('SSLCommerz initialization error:', error);
+    res.status(500).send('Payment initialization failed');
+  });
+
+    } catch (error) {
+      console.log("error payment to  sslcommerz", error);
+
+    }
+    
     res.status(201).json(newOrder);
   } catch (error) {
     if (!res.headersSent) {

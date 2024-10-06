@@ -15,9 +15,11 @@ const orderSchema = new mongoose.Schema({
   ],
   invoice: String,
   price: Number,
+  address: String,
   orderDate: { type: Date, default: Date.now },
   status: { type: String, enum: ["pending", "completed", "canceled"], default: "pending" }, 
   payment: { type: String, enum: ["Unpaid", "Paid"], default: "Unpaid" },
+  paymentMethod:{ type: String, enum: ["Bkash", "Bank Transfer", "Cash On Delivery"], default: "Cash On Delivery" },
 });
 
 const storeSchema = new mongoose.Schema({

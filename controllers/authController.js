@@ -255,7 +255,8 @@ exports.createOrder = async (req, res) => {
         return {productId:el.productId,quantity:el.quantity}
       }),
       total: orderData.price,
-      order: orderData.invoice
+      order: orderData.invoice,
+      status: "pending"
     }
     const newTransaction = new Transaction(transactionData);
 

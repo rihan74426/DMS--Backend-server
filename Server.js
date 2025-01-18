@@ -20,6 +20,10 @@ app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use("/api/companies", companyRoutes);
 app.use("/api/auth", authRoute);
 app.use("/api", productRoute);
+app.get("/", (req, res) => {
+    res.send("Server is running");
+})
+app.use("/api", transactionRoute);
 app.use("/api", transactionRoute);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

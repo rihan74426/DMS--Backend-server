@@ -15,7 +15,7 @@ connectDB();
 const app = express();
 app.use(express.json());
 
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors());
 // Routes
 app.use("/api/companies", companyRoutes);
 app.use("/api/auth", authRoute);

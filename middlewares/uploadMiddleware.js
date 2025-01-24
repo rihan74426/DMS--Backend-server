@@ -1,37 +1,29 @@
 const multer = require("multer");
-const path = require("path");
+const { v2: cloudinary } = require("cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+require("dotenv").config(); // Load environment variables
 
-// Storage Engine for Profile Picture
-const storage = multer.diskStorage({
-  destination: "./uploads/profile-pictures/",
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
+
+// Cloudinary Storage Engine
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "profile-pictures", // Cloudinary folder name
+    allowed_formats: ["jpeg", "jpg", "png"], // Allowed file types
+    public_id: (req, file) => "profile-" + Date.now(), // Unique file name
   },
 });
 
-// Check File Type
-const checkFileType = (file, cb) => {
-  const filetypes = /jpeg|jpg|png/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb("Error: Images Only!");
-  }
-};
-
-// Init Upload
+// File Upload Middleware
 const upload = multer({
-  storage: storage,
+  storage,
   limits: { fileSize: 1000000 }, // 1MB limit
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
-}).single("profileImage");
+}).single("profileImage"); // 'profileImage' should match your frontend input name
 
 module.exports = upload;

@@ -27,8 +27,9 @@ exports.updateUserProfile = async (req, res) => {
       user.phone = req.body.phone || user.phone;
       user.address = req.body.address || user.address;
 
+      // Handle profile image update from Cloudinary
       if (req.file) {
-        user.profileImage = req.file.path;
+        user.profileImage = req.file.path; // Cloudinary provides the URL in req.file.path
       }
 
       const updatedUser = await user.save();
@@ -39,7 +40,7 @@ exports.updateUserProfile = async (req, res) => {
         email: updatedUser.email,
         phone: updatedUser.phone,
         address: updatedUser.address,
-        profileImage: updatedUser.profileImage,
+        profileImage: updatedUser.profileImage, // Cloudinary image URL stored
         token: generateToken(updatedUser._id),
       });
     } else {
@@ -49,6 +50,7 @@ exports.updateUserProfile = async (req, res) => {
     res.status(500).json({ message: "Update failed", error });
   }
 };
+
 
 // @desc    Register new user
 // @route   POST /api/auth/register

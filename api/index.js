@@ -15,7 +15,7 @@ connectDB();
 const app = express();
 app.use(express.json());
 
-app.use(cors({origin:"https://dms-frontend-iusl.vercel.app"}));
+app.use(cors({origin:"https://dms-frontend-iusl.vercel.app, http://localhost:5173", optionsSuccessStatus: 200}));
 // Routes
 app.use("/api/companies", companyRoutes);
 app.use("/api/auth", authRoute);
